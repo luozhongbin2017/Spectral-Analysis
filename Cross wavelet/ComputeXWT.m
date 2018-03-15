@@ -16,7 +16,9 @@ function varargout = ComputeXWT(x,y,time,varargin)
 %   those values in the cross-wavelet transform that are above this
 %   threshold
 % phaseType - 'alt','synch', 'both'. Which phases to keep or filter out.
-% sigmaXY - Scalar that represents the crossvariance of two signals.
+% sigmaXY - Scalar that represents the crossvariance of two signals. If
+%   sigmaXY = [], then sigmaXY = std(x)*std(y). If sigmaXY = NaN, then does
+%   not normalize values of wavelet coefficients.
 % freqScale - 'log' or 'lin'; Determines whether the frequency scale should be log or
 %   linear.
 % pad - 0 or 1; zero pad or not
@@ -86,6 +88,8 @@ end
 
 if isempty(sigmaXY)
     sigmaXY = std(x)*std(y);
+elseif isnan(sigmaXY)
+    sigmaXY = 1;
 end
 
 scaleRange = 1./(freqRange*fourier_factor); % Scale range corresponding to frequency range.
@@ -119,8 +123,8 @@ coimat = repmat(1./coi(:)',length(freq), 1);
 % Wxy(ftmat < coimat) = 0; % Removing regions outside of COI
 
 %% Removing insignificant points
-% Wxy(sig95 < stringency) = 0;
-Wxy(abs(Wxy) < stringency)= 0;
+Wxy(sig95 < stringency) = 0;
+% Wxy(abs(Wxy) < stringency)= 0;
 
 %% Phase-based filtering
 a  = angle(Wxy);
