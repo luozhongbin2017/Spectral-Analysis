@@ -39,8 +39,8 @@ elseif (size(freq,1)>1 && size(freq,2)>1)
 end
 
 
+freq = freq(:);
 
-freq = sort(freq(:),'descend'); % Ensures that 'freq' is a col vec with values in descending order
 fmat  = repmat(freq,1,size(Wxy,2)); % Matrix where each col is the
 % freq vector and # of cols = length(time)
 

@@ -1,6 +1,6 @@
 
 function [mean_instantaneous_phase, peakpow_instantaneous_phase,varargout] = instantaneouswavephase(Wxy)
-% [mean_instantaneous_phase, peakpow_instantaneous_phase, phaseStd] = instantaneouswavephase(Wxy)
+% [mean_instantaneous_phase, peakpow_instantaneous_phase, phaseStd, peak_pow_inst] = instantaneouswavephase(Wxy)
 
 if isreal(Wxy)
     %     errordlg('First input variable must be a matrix of complex wavelet coefficients!')
@@ -14,6 +14,7 @@ mpv = angle(sum(Wxy)/size(Wxy,1));
 mpv(mpv<0) = 2*pi+(mpv(mpv<0));
 mean_instantaneous_phase = (360/(2*pi))*mpv;
 
+peak_pow_inst = max(abs(Wxy),[],1);
 ppv = angle(max(Wxy));
 ppv(ppv<0) = 2*pi+(ppv(ppv<0));
 peakpow_instantaneous_phase = (360/(2*pi))*(ppv);
@@ -34,4 +35,5 @@ if nouts > 2
     stdPhases(stdPhases<0)= 2*pi + (stdPhases(stdPhases<0));
     stdPhases = (180/pi)*stdPhases;
     varargout{1} = stdPhases';
+    varargout{2} = peak_pow_inst;
 end
