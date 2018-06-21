@@ -1,7 +1,9 @@
 %WAVELET  1D Wavelet transform with optional singificance testing
 %
-%   [WAVE,PERIOD,SCALE,COI] = wavelet(Y,DT,PAD,DJ,S0,J1,MOTHER,PARAM)
+% [WAVE,PERIOD,SCALE,COI] = wavelet(Y,DT,PAD,DJ,S0,J1,MOTHER,PARAM);
 %
+% [WAVE,PERIOD,SCALE,COI] =
+% wavelet(Y,DT,PAD,DJ,S0,J1,MOTHER,PARAM,'freqScale',freqScale,'freqRange',freqRange);
 %   Computes the wavelet transform of the vector Y (length N),
 %   with sampling rate DT.
 %
@@ -13,15 +15,6 @@
 %
 %    Y = the time series of length N.
 %    DT = amount of time between each Y value, i.e. the sampling time.
-%
-% OUTPUTS:
-%
-%    WAVE is the WAVELET transform of Y. This is a complex array
-%    of dimensions (N,J1+1). FLOAT(WAVE) gives the WAVELET amplitude,
-%    ATAN(IMAGINARY(WAVE),FLOAT(WAVE) gives the WAVELET phase.
-%    The WAVELET power spectrum is ABS(WAVE)^2.
-%    Its units are sigma^2 (the time series variance).
-%
 %
 % OPTIONAL INPUTS:
 % 
@@ -49,6 +42,22 @@
 %            For 'MORLET' this is k0 (wavenumber), default is 6.
 %            For 'PAUL' this is m (order), default is 4.
 %            For 'DOG' this is m (m-th derivative), default is 2.
+%   freqScale = ['log'] | 'lin' 
+%           Base 2-log or linear frequency scale.
+%   freqRange = [min_freq, max_freq] or []; specifies the freq range over
+%       which to compute the wavelets. If [], the computes for the full
+%       possible range using the length of the timeseries and the Nyquist
+%       limit.
+% 
+% OUTPUTS:
+%
+%    WAVE is the WAVELET transform of Y. This is a complex array
+%    of dimensions (N,J1+1). FLOAT(WAVE) gives the WAVELET amplitude,
+%    ATAN(IMAGINARY(WAVE),FLOAT(WAVE) gives the WAVELET phase.
+%    The WAVELET power spectrum is ABS(WAVE)^2.
+%    Its units are sigma^2 (the time series variance).
+%
+
 %
 %
 % OPTIONAL OUTPUTS:
@@ -96,7 +105,10 @@
 %  E-mail: torrence@ucar.edu              E-mail: gpc@cdc.noaa.gov
 %----------------------------------------------------------------------------
 function [wave,period,scale,coi] = ...
-	wavelet(Y,dt,pad,dj,s0,J1,mother,param,freqScale)
+	wavelet(Y,dt,pad,dj,s0,J1,mother,param,varargin)
+
+freqScale = 'log';
+freqRange = [];
 
 if (nargin < 8), param = -1;, end
 if (nargin < 7), mother = -1;, end
@@ -107,6 +119,19 @@ if (nargin < 3), pad = 0;, end
 if (nargin < 2)
 	error('Must input a vector Y and sampling time DT')
 end
+
+
+for jj = 1:numel(varargin)
+    if ischar(varargin{jj})
+        switch lower(varargin{jj})
+            case 'freqscale'
+                freqScale = varargin{jj+1};
+            case 'freqrange'
+                freqRange = varargin{jj+1};
+        end
+    end
+end
+
 
 n1 = length(Y);
 
@@ -131,21 +156,36 @@ k = [0., k, -k(fix((n-1)/2):-1:1)];
 f = fft(x);    % [Eqn(3)]
 
 %....construct SCALE array & empty PERIOD & WAVE arrays
+fourier_factor = get_fourier_factor(mother,param);
 if strcmpi(freqScale,'lin')
     maxF = 1/s0;
-    freqVec = (1:J1+1)*dj;
-    freqVec = maxF - freqVec;
-    scale = 1./freqVec; 
+    minF = 1/(n1*dt);
+    freq = minF:dj:maxF;
+    if ~isempty(freqRange)
+        minF = min(freqRange);
+        maxF = max(freqRange);
+        keepInds = (freq >= minF) & (freq <= maxF);
+        freq = freq(keepInds);        
+    end
+    scale = 1./(freq*fourier_factor);    
 else
     scale = s0*2.^((0:J1)*dj);
+    if ~isempty(freqRange)
+        freq = 1/(scale*fourier_factor);
+        minF = min(freqRange);
+        maxF = max(freqRange);
+        keepInds = (freq >= minF) & (freq <= maxF);
+        freq = freq(keepInds);
+        scale = 1./(freq*fourier_factor);
+    end
 end
 
 period = scale;
-wave = zeros(J1+1,n);  % define the wavelet array
-wave = wave + i*wave;  % make it complex
+wave = zeros(length(scale),n);  % define the wavelet array
+wave = wave + 1i*wave;  % make it complex
 
 % loop through all scales and compute transform
-for a1 = 1:J1+1
+for a1 = 1:length(scale)
 	[daughter,fourier_factor,coi,dofmin]=wave_bases(mother,k,scale(a1),param);	
 	wave(a1,:) = ifft(f.*daughter);  % wavelet transform[Eqn(4)]
 end
@@ -154,4 +194,45 @@ period = fourier_factor*scale;
 coi = coi*dt*[1E-5,1:((n1+1)/2-1),fliplr((1:(n1/2-1))),1E-5];  % COI [Sec.3g]
 wave = wave(:,1:n1);  % get rid of padding before returning
 
-return
+end
+
+
+function fourier_factor =  get_fourier_factor(mother,k0)
+% Function for computing the fourier_factor for a given mother wavelet with
+% a specified nondimensional frequency
+% 
+% fourier_factor = get_fourier_factor(mother,k0);
+% Inputs:
+% mother: String, ['morlet'] | 'paul' | 'dog'
+%   Specifies the mother wavelet to use
+% k0: Scalar; specifies the nondimensional frequency of the mother wavelet
+%   If k0 = -1, then automatically assigns the following values:
+%   'morlet': k0 = 6
+%   'paul': k0 = 4
+%   'dog': k0 = 2
+% Output:
+% fourier_factor: Scalar, that connects the wavelet scale to period as
+%   follows:
+%   period = 1/freq = fourier_factor * scale;
+
+switch lower(mother)
+    case 'morlet'
+        if k0 == -1
+            k0 = 6;
+        end
+        fourier_factor = (4*pi)/(k0 + sqrt(2+k0^2));
+    case 'paul'
+        if k0 == -1
+            k0 = 4;
+        end
+        m = k0;
+        fourier_factor = 4*pi/(2*m+1);
+    case 'dog'
+        if k0 == -1
+            k0 = 2;
+        end
+        m = k0;
+        fourier_factor = 2*pi/sqrt(2/(2*m+1));
+end
+
+end

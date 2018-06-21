@@ -73,10 +73,7 @@ if strcmpi(Args.AR1,'auto')
     end
 end
 
-
-
 %----------------::::::::---------- Analyze: ---------:::::::::::::-----------------
-
 
 [wave,period,scale,coi] = wavelet(d(:,2),dt,Args.Pad,Args.Dj,Args.S0,Args.J1,Args.Mother);
 
@@ -88,7 +85,6 @@ sig95 = power ./ (sigma2*sig95);
 Yticks = 2.^(fix(log2(min(period))):fix(log2(max(period))));
 
 if Args.MakeFigure
-
     if Args.BlackandWhite
         levels = [0.25,0.5,1,2,4,8,16] ;
         
@@ -103,8 +99,7 @@ if Args.MakeFigure
         cmap=(1:-.01:.5)'*.9;
         cmap(:,2:3)=cmap(:,[1 1]);
         %cmap(:,1:2)=cmap(:,1:2)*.8;
-        colormap(cmap);
-        set(gca,'YLim',log2([min(period),max(period)]), ...
+        colormap(cmap);        set(gca,'YLim',log2([min(period),max(period)]), ...
             'YDir','reverse', ...
             'YTick',log2(Yticks(:)), ...
             'YTickLabel',num2str(Yticks'), ...

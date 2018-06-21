@@ -10,7 +10,7 @@
 %    DT = amount of time between each Y value, i.e. the sampling time.
 %    SCALE = the vector of scale indices, from previous call to WAVELET.
 %
-%
+%sig
 % OUTPUTS:
 %
 %    SIGNIF = significance levels as a function of SCALE

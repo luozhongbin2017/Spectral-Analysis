@@ -180,19 +180,19 @@ coiy=coiy(idx);
 
 coi=min(coix,coiy);
 
-Wxy=(X.*conj(Y)); % Not being normalized by division by sigmax*sigmay here.
+Wxy=(X.*conj(Y))/(sigmax*sigmay);
 
 switch lower(noiseType)
     case 'red'
         %       Pkx=ar1spectrum_ap(Args.AR1(1),period); % This version uses eqn 16
         %           from Torrence & Compo, 1998, which should be equivalent to
         %           Grinsted's version, but seems not to be (????)
-        Pkx =ar1spectrum(Args.AR1(1),period./dt);
-        Pky=ar1spectrum(Args.AR1(2),period./dt);
+        Pkx = ar1spectrum(Args.AR1(1),period./dt);
+        Pky = ar1spectrum(Args.AR1(2),period./dt);
     case 'white'
         %       Pkx=ar1spectrum_ap(0,period);
         Pkx = ar1spectrum(0,period./dt);
-        Pky=ar1spectrum(0,period./dt);
+        Pky = ar1spectrum(0,period./dt);
 end
 
 V=2;
