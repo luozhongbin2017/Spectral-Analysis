@@ -180,7 +180,9 @@ coiy=coiy(idx);
 
 coi=min(coix,coiy);
 
-Wxy=(X.*conj(Y))/(sigmax*sigmay);
+% Wxy=(X.*conj(Y))/(sigmax*sigmay);
+
+Wxy = X.*conj(Y);
 
 switch lower(noiseType)
     case 'red'

@@ -114,7 +114,7 @@ y = [time(:) y(:)];
 [Wxy,period,~,coi,sig95]= xwt(x,y,'dj',dj,'S0',S0, 'ms', maxScale, 'Mother', mother,'pad',pad,'noiseType',noiseType,'freqScale',freqScale);
 
 freq =1./period;
-Wxy = Wxy/sigmaXY;
+% Wxy = Wxy/sigmaXY;
 
 
 %% Removing regions outside COI
